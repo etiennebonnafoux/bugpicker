@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "BugPicker",
+  "version": "0.1.0",
+  "description": "Select an area, describe it, file a GitHub issue.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["https://github.com/*", "https://api.github.com/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "BugPicker: capture area" },
+  "options_page": "options.html",
+  "commands": {
+    "start-capture": {
+      "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
+      "description": "Start area capture"
+    }
+  }
+}

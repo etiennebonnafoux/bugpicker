@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>BugPicker options</title>
+    <style>
+      :root { color-scheme: light; }
+      body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: #1f2328; max-width: 1000px; margin: 24px auto; padding: 0 24px 48px; }
+      h1 { font-size: 22px; margin: 0 0 4px; }
+      h2 { font-size: 16px; margin: 28px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #d0d7de; }
+      p.muted, .muted { color: #656d76; font-size: 13px; }
+      label.field { display: block; margin: 10px 0; font-weight: 600; }
+      label.field span.help { display: block; font-weight: 400; color: #656d76; font-size: 13px; }
+      input[type="text"], input[type="password"], input[type="url"], select { font: inherit; padding: 5px 8px; border: 1px solid #d0d7de; border-radius: 6px; width: 100%; max-width: 420px; box-sizing: border-box; margin-top: 4px; }
+      table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+      th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #d0d7de; vertical-align: top; }
+      th { font-size: 12px; color: #656d76; text-transform: uppercase; letter-spacing: 0.03em; }
+      td.actions { white-space: nowrap; }
+      td .result { font-size: 12px; margin-top: 4px; }
+      .placeholder { color: #8c959f; font-style: italic; }
+      button { font: 600 13px/20px inherit; font-family: inherit; padding: 4px 12px; border-radius: 6px; border: 1px solid #d0d7de; background: #f6f8fa; cursor: pointer; }
+      button:hover { background: #eef1f4; }
+      button.primary { background: #1f883d; border-color: #1a7f37; color: #fff; }
+      button.primary:hover { background: #1a7f37; }
+      button.danger { color: #d1242f; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .ok { color: #1a7f37; }
+      .err { color: #d1242f; }
+      .status { min-height: 20px; margin-left: 8px; }
+      fieldset { border: 1px solid #d0d7de; border-radius: 8px; padding: 8px 16px 12px; margin: 12px 0; }
+      legend { font-weight: 600; padding: 0 4px; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+      code { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f6f8fa; padding: 1px 4px; border-radius: 4px; }
+      ol, ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <h1>BugPicker</h1>
+    <p class="muted">Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> on macOS) or click the toolbar button, drag over the problem, describe it, submit. Change the shortcut at <code>chrome://extensions/shortcuts</code>.</p>
+
+    <h2>GitHub</h2>
+    <form id="general">
+      <div class="grid">
+        <div>
+          <label class="field">Owner
+            <span class="help">Default user or organization for every mapping without an owner override.</span>
+            <input type="text" id="owner" autocomplete="off" spellcheck="false" placeholder="my-name" />
+          </label>
+          <label class="field">Token
+            <span class="help">Fine-grained personal access token. Stored only in this browser.</span>
+            <input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="github_pat_…" />
+          </label>
+          <label class="field">Default labels
+            <span class="help">Comma separated; used when a mapping has none.</span>
+            <input type="text" id="default-labels" placeholder="bug, qa" />
+          </label>
+          <label class="field">Screenshot upload
+            <select id="upload-strategy">
+              <option value="auto">Auto: GitHub web upload, branch commit as fallback</option>
+              <option value="web">Web upload only (needs a github.com login in this browser)</option>
+              <option value="branch">Branch commit only</option>
+            </select>
+          </label>
+          <label class="field">Screenshot branch
+            <span class="help">Orphan branch used by the branch strategy, same name in every repo.</span>
+            <input type="text" id="screenshot-branch" spellcheck="false" />
+          </label>
+          <div class="row"><button type="submit" class="primary">Save</button><span id="general-status" class="status"></span></div>
+        </div>
+        <div>
+          <p><strong>Creating the token</strong></p>
+          <ol class="muted">
+            <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>.</li>
+            <li>Resource owner: the account or organization that owns your repos.</li>
+            <li>Repository access: <strong>Only select repositories</strong>, and select every repo used in a mapping (or <strong>All repositories</strong> to avoid updating the token when you add a site).</li>
+            <li>Repository permissions: <strong>Issues: Read and write</strong>, <strong>Contents: Read and write</strong> (for the branch strategy), <strong>Metadata: Read</strong> (automatic).</li>
+          </ol>
+          <p class="muted">A fine-grained token belongs to a single account or organization. Mappings whose owner override points elsewhere can't be reached with the same token; <strong>Test</strong> reports them as "no access".</p>
+        </div>
+      </div>
+    </form>
+
+    <h2>Site mappings</h2>
+    <p class="muted">One repo per website. <code>example.com</code> matches <code>example.com</code> and <code>www.example.com</code> only; <code>*.example.com</code> also matches every subdomain. A pattern with a port only matches that port. The most specific pattern wins.</p>
+    <table>
+      <thead>
+        <tr><th>Pattern</th><th>Repo</th><th>Owner</th><th>Default labels</th><th></th></tr>
+      </thead>
+      <tbody id="mappings"></tbody>
+    </table>
+    <div class="row">
+      <button type="button" id="add-mapping">Add mapping</button>
+      <button type="button" id="test-all">Test all</button>
+    </div>
+
+    <form id="mapping-editor" hidden>
+      <fieldset>
+        <legend id="mapping-editor-title">Add mapping</legend>
+        <div class="grid">
+          <label class="field">Pattern <span class="help">Hostname, <code>*.domain</code> or <code>host:port</code>. A pasted URL is trimmed to its host.</span><input type="text" id="m-pattern" spellcheck="false" /></label>
+          <label class="field">Repo <span class="help">Repository name only.</span><input type="text" id="m-repo" spellcheck="false" /></label>
+          <label class="field">Owner override <span class="help">Leave empty to use the global owner.</span><input type="text" id="m-owner" spellcheck="false" /></label>
+          <label class="field">Default labels <span class="help">Comma separated.</span><input type="text" id="m-labels" /></label>
+        </div>
+        <div class="row"><button type="submit" class="primary">Save mapping</button><button type="button" id="m-cancel">Cancel</button><span id="mapping-status" class="status err"></span></div>
+      </fieldset>
+    </form>
+
+    <h2>Which repo for this URL?</h2>
+    <div class="row">
+      <input type="url" id="probe-url" placeholder="https://app.example.com/some/page" />
+      <span id="probe-result" class="muted"></span>
+    </div>
+
+    <h2>Export / import</h2>
+    <p class="muted">Copies the owner, mappings, default labels and upload settings to another computer. The token is never exported.</p>
+    <div class="row">
+      <button type="button" id="export">Export settings</button>
+      <button type="button" id="import">Import settings</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden />
+      <span id="transfer-status" class="status"></span>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>
