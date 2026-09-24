@@ -13,9 +13,15 @@ export function selectArea(): Promise<Rect | null> {
     host.style.cssText =
       "all: initial; position: fixed; inset: 0; z-index: 2147483647; cursor: crosshair; background: rgba(0,0,0,0.15);";
     const root = host.attachShadow({ mode: "closed" });
-    root.innerHTML = `<style>${OVERLAY_CSS}</style><div class="box" hidden><span class="size"></span></div>`;
-    const box = root.querySelector<HTMLDivElement>(".box")!;
-    const sizeLabel = root.querySelector<HTMLSpanElement>(".size")!;
+    const style = document.createElement("style");
+    style.textContent = OVERLAY_CSS;
+    const box = document.createElement("div");
+    box.className = "box";
+    box.hidden = true;
+    const sizeLabel = document.createElement("span");
+    sizeLabel.className = "size";
+    box.append(sizeLabel);
+    root.append(style, box);
 
     let start: { x: number; y: number } | null = null;
     let current: Rect | null = null;

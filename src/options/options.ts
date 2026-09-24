@@ -39,6 +39,9 @@ const probeResult = $<HTMLSpanElement>("probe-result");
 const transferStatus = $<HTMLSpanElement>("transfer-status");
 const importFile = $<HTMLInputElement>("import-file");
 
+const hostAccess = $<HTMLDivElement>("host-access");
+const hostAccessStatus = $<HTMLSpanElement>("host-access-status");
+
 let settings: Settings;
 let editingId: string | null = null;
 /** Test results survive a re-render of the table. */
@@ -279,7 +282,26 @@ importFile.addEventListener("change", async () => {
   }
 });
 
+// Host access: always granted in Chrome; Firefox lets the user withhold or revoke it.
+
+const GITHUB_ORIGINS = { origins: chrome.runtime.getManifest().host_permissions ?? [] };
+
+async function updateHostAccess(): Promise<void> {
+  hostAccess.hidden = await chrome.permissions.contains(GITHUB_ORIGINS);
+}
+
+$<HTMLButtonElement>("grant-host-access").addEventListener("click", async () => {
+  // No await before request(): Firefox only allows it while handling the click.
+  const granted = await chrome.permissions.request(GITHUB_ORIGINS).catch(() => false);
+  if (!granted) setStatus(hostAccessStatus, "Access not granted.", false);
+  await updateHostAccess();
+});
+
+chrome.permissions.onAdded.addListener(() => void updateHostAccess());
+chrome.permissions.onRemoved.addListener(() => void updateHostAccess());
+
 void (async () => {
+  void updateHostAccess();
   settings = await loadSettings();
   fillGeneral();
   renderMappings();
