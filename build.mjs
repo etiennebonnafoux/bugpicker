@@ -10,13 +10,13 @@ cpSync("src/options/options.html", "dist/options.html");
 
 const common = {
   bundle: true,
-  target: "chrome120",
+  target: ["chrome120", "firefox140"],
   sourcemap: watch ? "inline" : false,
   logLevel: "info",
 };
 
 const builds = [
-  // The service worker is declared with "type": "module".
+  // Chrome runs it as a module service worker, Firefox as a module background script.
   { ...common, entryPoints: { background: "src/background/index.ts" }, format: "esm", outdir: "dist" },
   { ...common, entryPoints: { content: "src/content/index.ts" }, format: "iife", outdir: "dist" },
   { ...common, entryPoints: { options: "src/options/options.ts" }, format: "iife", outdir: "dist" },

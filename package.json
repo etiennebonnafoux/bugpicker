@@ -2,7 +2,7 @@
   "name": "bugpicker",
   "version": "0.1.0",
   "private": true,
-  "description": "Chrome extension: select an area of a page, describe it, file a GitHub issue with the screenshot inline.",
+  "description": "Chrome and Firefox extension: select an area of a page, describe it, file a GitHub issue with the screenshot inline.",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -10,12 +10,14 @@
     "watch": "node build.mjs --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm test && npm run build"
+    "lint:firefox": "web-ext lint -s dist",
+    "check": "npm run typecheck && npm test && npm run build && npm run lint:firefox"
   },
   "devDependencies": {
     "@types/chrome": "0.3.0",
     "esbuild": "0.28.2",
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "vitest": "5.0.1",
+    "web-ext": "10.7.0"
   }
 }

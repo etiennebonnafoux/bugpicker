@@ -1,6 +1,6 @@
 # BugPicker
 
-A Chrome extension (Manifest V3) for manual frontend QA: press a shortcut, drag a rectangle over
+A Chrome and Firefox extension (Manifest V3) for manual frontend QA: press a shortcut, drag a rectangle over
 the problem, type a title, pick labels, submit. BugPicker files a GitHub issue in the repo mapped to
 the current website, with the cropped screenshot inline and the page's environment attached.
 
@@ -13,12 +13,23 @@ npm ci
 npm run build        # or: npm run watch
 ```
 
-Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked** and select `dist/`.
+- **Chrome**: open `chrome://extensions`, enable **Developer mode**, click **Load unpacked** and
+  select `dist/`. Chrome may warn about `background.scripts` and `browser_specific_settings`:
+  those keys are for Firefox and are ignored.
+- **Firefox** (140+): open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…**
+  and pick `dist/manifest.json`, or run `npx web-ext run -s dist`. Temporary add-ons are removed
+  when Firefox quits; to keep it installed, sign it as an unlisted add-on on
+  [addons.mozilla.org](https://addons.mozilla.org/developers/) (`npx web-ext sign -s dist --channel unlisted`).
+  If the options page shows **BugPicker can't reach github.com yet**, click **Grant access**: Firefox
+  lets you withhold the github.com permissions.
+
 The options page opens on first use: set your GitHub **owner**, a **token** and at least one
 **site mapping**.
 
 Shortcut: `Ctrl+Shift+Y` (`⌘+Shift+Y` on macOS), or the toolbar button. Change it at
-`chrome://extensions/shortcuts`.
+`chrome://extensions/shortcuts` in Chrome, or `about:addons` → gear menu → **Manage Extension
+Shortcuts** in Firefox. On Linux, Firefox already uses `Ctrl+Shift+Y` for the Downloads window, so
+pick another key there if the shortcut does nothing.
 
 ### Token
 
@@ -33,7 +44,7 @@ points elsewhere shows "no access" when tested.
 ## How it works
 
 1. **Capture** — the content script is injected on demand (`activeTab`), draws a selection overlay,
-   removes it, waits two frames, then the service worker calls `captureVisibleTab` and crops with an
+   removes it, waits two frames, then the background script calls `captureVisibleTab` and crops with an
    `OffscreenCanvas`. The scale comes from the bitmap width, so the crop is right under browser zoom
    and HiDPI screens. PNGs over 5 MB are re-encoded as JPEG.
 2. **Form** — rendered in a closed Shadow DOM, so page CSS can't touch it; keyboard events don't
@@ -68,8 +79,8 @@ mapping's default labels, else the global default labels.
 ## Security
 
 - The token lives in `chrome.storage.local` (not exposed to content scripts) and is only used by the
-  service worker and the options page. It is never sent to a page, including during the web upload.
-- The service worker validates every message and only files issues into mapped repos.
+  background script and the options page. It is never sent to a page, including during the web upload.
+- The background script validates every message and only files issues into mapped repos.
 
 ## Development
 
@@ -77,10 +88,11 @@ mapping's default labels, else the global default labels.
 npm run typecheck
 npm test             # vitest: site mapping, crop math, issue body, settings, message validation
 npm run build
+npm run lint:firefox # web-ext lint on dist/ (run after the build)
 ```
 
 ```
-src/background/   service worker: commands, capture, GitHub API, upload strategies
+src/background/   background (Chrome service worker, Firefox event page): commands, capture, GitHub API, upload strategies
 src/content/      selection overlay and issue form (Shadow DOM)
 src/options/      options page
 src/shared/       pure logic shared by all three (unit-tested)
@@ -94,9 +106,9 @@ shortcuts · web upload gives a `user-attachments` URL when logged in, falls bac
 orphan branch has no shared history with `main` · private-repo images render for collaborators only ·
 bad label / revoked token keep the form and Retry works · `chrome://` pages show "not available" on
 the toolbar badge · two mapped sites file into their own repos · Map this site / Change work ·
-changing the global owner re-targets mappings without an override.
+changing the global owner re-targets mappings without an override. Run it in both Chrome and Firefox.
 
 ## Not in v1
 
-Annotations, full-page capture, recordings or console logs, OAuth, Firefox/Safari, per-owner
+Annotations, full-page capture, recordings or console logs, OAuth, Safari, per-owner
 tokens, path-based mappings.
